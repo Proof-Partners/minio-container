@@ -7,21 +7,22 @@ on:
         type: string
         description: "The version of the image to build. This appears to be in timestamp format."
 env:
-  IMAGE_NAME: minio
+  VERSION: ${{ github.event.inputs.version }}
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/minio
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      VERSION: ${{ github.event.inputs.version }}
-      IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/minio
     steps:
-      - uses: actions/checkout@v2
-      - name: Run the workflow
-        run: docker build --platform linux/amd64,linux/arm64,windows/amd64 --build-arg VERSION=$VERSION -t ${IMAGE_NAME} .
-      - name: Push image to github container registry
-        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-      - run: |
-          docker push ${IMAGE_NAME}:latest
-          docker tag ${IMAGE_NAME}:latest ${IMAGE_NAME}:$VERSION
-          docker push ${IMAGE_NAME}:$VERSION
+        - uses: actions/checkout@v2
+        - name: Run the workflow
+          run: docker build --platform linux/amd64,linux/arm64,windows/amd64 --build-arg VERSION=$VERSION -t minio .
+        - name: Login github container registry
+          run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        - name: Push the images
+          run: |
+            IMAGE_NAME=${IMAGE_NAME,,} // make sure it's lowercase
+            docker tag minio ${IMAGE_NAME}:latest
+            docker push ${IMAGE_NAME}:latest
+            docker tag minio ${IMAGE_NAME}:$VERSION
+            docker push ${IMAGE_NAME}:$VERSION
