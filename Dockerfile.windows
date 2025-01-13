@@ -1,0 +1,12 @@
+# syntax=docker/dockerfile:1
+FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
+
+ARG GOARCH
+
+WORKDIR /app
+COPY --from=base /go/bin/windows_${GOARCH}/minio.exe /app/minio.exe
+
+EXPOSE 9000
+EXPOSE 9001
+
+ENTRYPOINT ["/app/minio.exe"]

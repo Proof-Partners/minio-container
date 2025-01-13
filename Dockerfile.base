@@ -1,0 +1,10 @@
+# syntax=docker/dockerfile:1
+ARG GOARCH
+FROM golang:alpine
+ARG GOOS
+ARG GOARCH
+ARG VERSION
+
+WORKDIR /app
+
+RUN GOOS=${GOOS} GOARCH=${GOARCH} go install github.com/minio/minio@${VERSION}

@@ -1,0 +1,11 @@
+# syntax=docker/dockerfile:1
+ARG GOARCH
+FROM alpine:latest
+
+WORKDIR /app
+COPY --from=base /go/bin/minio /app/minio
+
+EXPOSE 9000
+EXPOSE 9001
+
+ENTRYPOINT ["/app/minio"]
