@@ -23,6 +23,7 @@ target "base" {
     GOOS = "${OS}"
     GOARCH = "${ARCH}"
   }
+  output = "type=cacheonly"
   platforms = ["linux/${ARCH}"]
 }
 
@@ -41,7 +42,7 @@ target "minio" {
     "ghcr.io/proof-partners/minio:${OS}-${ARCH}-latest",
     "ghcr.io/proof-partners/minio:${OS}-${ARCH}-${VERSION}"
   ]
-  target = "type=registry"
+  output = "type=registry"
   platforms = ["${OS}/${ARCH}"]
 }
 
