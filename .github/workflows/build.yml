@@ -30,4 +30,4 @@ jobs:
           OS: ${{ matrix.OS }}
           ARCH: ${{ matrix.ARCH }}
           VERSION: ${{ env.VERSION }}
-        run: docker buildx bake --push
+        run: docker buildx bake
