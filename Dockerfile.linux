@@ -1,5 +1,4 @@
 # syntax=docker/dockerfile:1
-ARG GOARCH
 FROM alpine:latest
 
 WORKDIR /app
