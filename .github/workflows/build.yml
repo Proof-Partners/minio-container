@@ -15,6 +15,9 @@ jobs:
       matrix:
         OS: [linux, windows]
         ARCH: [amd64, arm64]
+        exclude:
+          - OS: windows
+            ARCH: arm64
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
