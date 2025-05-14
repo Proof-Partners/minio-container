@@ -1,18 +1,96 @@
 name: Build images
+
 on:
   workflow_dispatch:
     inputs:
-      version:
+      release:
         required: true
         type: string
-        description: "The version of the image to build. This appears to be in timestamp format."
+        description: "The tag name of the MinIO release to build (e.g., RELEASE.2023-05-04T21-44-30Z)"
+  schedule:
+    # Run weekly at midnight on Sunday
+    - cron: '0 0 * * 0'
+
 env:
-  VERSION: ${{ github.event.inputs.version }}
+  VERSION: ${{ github.event.inputs.release || env.LATEST_RELEASE }}
+
 permissions:
   contents: read
   packages: write
+
 jobs:
+  check-latest-release:
+    runs-on: ubuntu-latest
+    # Only run this job if triggered by the schedule, not manually
+    if: github.event_name == 'schedule'
+    outputs:
+      latest_release: ${{ steps.get-latest-release.outputs.latest_release }}
+      should_run: ${{ steps.check-new-release.outputs.should_run }}
+    steps:
+      - name: Get latest release
+        id: get-latest-release
+        run: |
+          LATEST_RELEASE=$(curl -s https://api.github.com/repos/minio/minio/releases | jq -r '.[] | select(.tag_name | test("RELEASE.*")) | .tag_name' | head -n 1)
+          echo "latest_release=${LATEST_RELEASE}" >> $GITHUB_OUTPUT
+          echo "Latest release: ${LATEST_RELEASE}"
+      
+      - name: Check if this is a new release
+        id: check-new-release
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // We'll use GitHub repository variable to store the last processed release
+            // First, try to get the current value of the variable
+            let lastProcessed;
+            try {
+              const { data: variable } = await github.rest.actions.getRepoVariable({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'LAST_MINIO_RELEASE'
+              });
+              lastProcessed = variable.value;
+              console.log(`Last processed release: ${lastProcessed}`);
+            } catch (error) {
+              console.log('Variable not found or first run, will create it');
+              lastProcessed = '';
+            }
+            
+            const latestRelease = '${{ steps.get-latest-release.outputs.latest_release }}';
+            console.log(`Latest release: ${latestRelease}`);
+            
+            // Check if this is a new release
+            let shouldRun = false;
+            if (latestRelease !== lastProcessed) {
+              console.log('New release detected!');
+              shouldRun = true;
+              
+              // Update the variable with the latest release
+              try {
+                await github.rest.actions.createOrUpdateRepoVariable({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: 'LAST_MINIO_RELEASE',
+                  value: latestRelease
+                });
+                console.log('Updated LAST_MINIO_RELEASE variable');
+              } catch (error) {
+                console.log('Error updating variable:', error);
+                // Still run the workflow even if variable update fails
+              }
+            } else {
+              console.log('No new release. Skipping build.');
+            }
+            
+            // Set output parameters
+            core.setOutput('should_run', shouldRun.toString());
   build:
+    # For manual runs, run directly
+    # For scheduled runs, only run if check-latest-release determined there's a new release
+    needs: [check-latest-release]
+    if: >
+      github.event_name == 'workflow_dispatch' || 
+      (github.event_name == 'schedule' && needs.check-latest-release.outputs.should_run == 'true')
     strategy:
       matrix:
         OS: [linux, windows]
@@ -24,12 +102,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      
+      - name: Set VERSION env var
+        run: |
+          if [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "VERSION=${{ needs.check-latest-release.outputs.latest_release }}" >> $GITHUB_ENV
+            echo "Using latest version: ${{ needs.check-latest-release.outputs.latest_release }}"
+          else
+            echo "Using manually specified version: ${{ github.event.inputs.release }}"
+          fi
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
+      
       - name: Login github container registry
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
+      
       - name: Run the workflow
         env:
           OS: ${{ matrix.OS }}
