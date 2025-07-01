@@ -1,4 +1,5 @@
 # minio-container
+[![Build images](https://github.com/Proof-Partners/minio-container/actions/workflows/build.yml/badge.svg)](https://github.com/Proof-Partners/minio-container/actions/workflows/build.yml)
 
 Individual docker images for running minio on different platforms and architectures.
 
