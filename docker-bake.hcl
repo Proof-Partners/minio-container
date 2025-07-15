@@ -2,6 +2,10 @@ group "default" {
   targets = ["base", "minio"]
 }
 
+variable "REPO" {
+  default = ""
+}
+
 variable "VERSION" {
   default = "latest"
 }
@@ -33,14 +37,15 @@ target "minio" {
     base = "target:base"
   }
   args = {
+    REPO = "${REPO}"
     VERSION = "${VERSION}"
     GOOS = "${OS}"
     GOARCH = "${ARCH}"
   }
   dockerfile = "Dockerfile.${OS}"
   tags = [
-    "ghcr.io/proof-partners/minio:${OS}-${ARCH}-latest",
-    "ghcr.io/proof-partners/minio:${OS}-${ARCH}-${VERSION}"
+    "ghcr.io/${REPO}:${OS}-${ARCH}-latest",
+    "ghcr.io/${REPO}:${OS}-${ARCH}-${VERSION}"
   ]
   output = ["type=registry"]
   platforms = ["${OS}/${ARCH}"]
