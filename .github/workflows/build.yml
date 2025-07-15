@@ -42,7 +42,7 @@ jobs:
         run: |
           ENCODED_TOKEN=$(echo -n "${{ secrets.GITHUB_TOKEN }}" | base64)
           TAG=$(curl -s -H "Authorization: Bearer ${ENCODED_TOKEN}" "https://ghcr.io/v2/${IMAGE}/tags/list" \
-            jq '.tags[]' | sed -E 's/^.+(RELEASE\..+)"$/\1/' | awk '/RELEASE/' | sort | tail -n 1)
+            | jq '.tags[]' | sed -E 's/^.+(RELEASE\..+)"$/\1/' | awk '/RELEASE/' | sort | tail -n 1)
           echo "${IMAGE}: ${TAG}"
       
       - name: Check if this is a new release
