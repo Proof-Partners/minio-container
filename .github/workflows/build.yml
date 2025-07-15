@@ -12,7 +12,7 @@ on:
     - cron: '*/15 * * * *'
 
 env:
-  VERSION: ${{ github.event.inputs.release || vars. }}
+  VERSION: ${{ github.event.inputs.release || '' }}
 
 permissions:
   contents: read
