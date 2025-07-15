@@ -12,7 +12,7 @@ on:
     - cron: '*/15 * * * *'
 
 env:
-  REPO: 'proof-partners/minio'
+  IMAGE: 'proof-partners/minio'
   VERSION: ${{ github.event.inputs.release || '' }}
 
 permissions:
@@ -35,14 +35,14 @@ jobs:
           echo "latest_release=${LATEST_RELEASE}" >> $GITHUB_OUTPUT
           echo "Latest release: ${LATEST_RELEASE}"
 
-      - name: Login github container registry
-        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
       - name: Get latest image
         id: get-latest-build
+        env:
+          IMAGE: ${{ env.IMAGE }}
         run: |
-          TAGS=$(curl -s "https://ghcr.io/v2/${REPO}/tags/list")
-          echo "${TAGS}"
+          ENCODED_TOKEN=$(echo -n "${{ secrets.GITHUB_TOKEN }}" | base64)
+          TAGS=$(curl -s -H "Authorization: Bearer ${ENCODED_TOKEN}" "https://ghcr.io/v2/${IMAGE}/tags/list")
+          echo "${IMAGE}: ${TAGS}"
       
       - name: Check if this is a new release
         id: check-new-release
@@ -130,7 +130,7 @@ jobs:
       
       - name: Run the workflow
         env:
-          REO: ${{ env.REPO }}
+          IMAGE: ${{ env.IMAGE }}
           OS: ${{ matrix.OS }}
           ARCH: ${{ matrix.ARCH }}
           VERSION: ${{ env.VERSION }}

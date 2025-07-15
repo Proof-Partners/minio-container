@@ -2,7 +2,7 @@ group "default" {
   targets = ["base", "minio"]
 }
 
-variable "REPO" {
+variable "IMAGE" {
   default = ""
 }
 
@@ -37,15 +37,15 @@ target "minio" {
     base = "target:base"
   }
   args = {
-    REPO = "${REPO}"
+    IMAGE = "${IMAGE}"
     VERSION = "${VERSION}"
     GOOS = "${OS}"
     GOARCH = "${ARCH}"
   }
   dockerfile = "Dockerfile.${OS}"
   tags = [
-    "ghcr.io/${REPO}:${OS}-${ARCH}-latest",
-    "ghcr.io/${REPO}:${OS}-${ARCH}-${VERSION}"
+    "ghcr.io/${IMAGE}:${OS}-${ARCH}-latest",
+    "ghcr.io/${IMAGE}:${OS}-${ARCH}-${VERSION}"
   ]
   output = ["type=registry"]
   platforms = ["${OS}/${ARCH}"]
