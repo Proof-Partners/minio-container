@@ -67,7 +67,7 @@ jobs:
               
               // Update the variable with the latest release
               try {
-                await github.rest.actions.createOrUpdateRepoVariable({
+                await github.rest.actions.updateRepoVariable({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   name: 'LAST_MINIO_RELEASE',
